@@ -1,0 +1,10 @@
+create table videos(id uuid primary key default gen_random_uuid(),title text,level text,url text,created_at timestamptz default now());
+create table video_views(student_id uuid references profiles on delete cascade,video_id uuid references videos on delete cascade,primary key(student_id,video_id));
+create table messages(id uuid primary key default gen_random_uuid(),student_id uuid references profiles on delete cascade,sender_id uuid references profiles,body text,created_at timestamptz default now());
+alter table videos enable row level security;alter table video_views enable row level security;alter table messages enable row level security;
+create policy v1 on videos for select using(auth.uid() is not null);
+create policy v2 on videos for all using(is_admin());
+create policy w1 on video_views for select using(student_id=auth.uid() or is_admin());
+create policy w2 on video_views for insert with check(student_id=auth.uid());
+create policy m1 on messages for select using(student_id=auth.uid() or is_admin());
+create policy m2 on messages for insert with check(sender_id=auth.uid() and (student_id=auth.uid() or is_admin()));
